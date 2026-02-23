@@ -364,7 +364,7 @@ export const LandingPage = () => {
               <h4 className="font-bold text-white text-lg">Navigation</h4>
               <ul className="space-y-3 text-sm text-gray-400">
                 <li><a href="#" className="hover:text-night-gold transition-colors">À propos</a></li>
-                <li><a href="#" className="hover:text-night-gold transition-colors">Comment ça marche</a></li>
+                <li><button onClick={() => navigate('/mobile')} className="hover:text-night-gold transition-colors text-left">Application Mobile</button></li>
                 <li><a href="#" className="hover:text-night-gold transition-colors">Tarifs</a></li>
                 <li><a href="#" className="hover:text-night-gold transition-colors">Blog</a></li>
                 <li><a href="#" className="hover:text-night-gold transition-colors">Support</a></li>

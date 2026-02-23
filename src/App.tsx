@@ -10,6 +10,7 @@ import { Profile } from './pages/Profile';
 import { Missions } from './pages/Missions';
 import { Planning } from './pages/Planning';
 import { Chat } from './pages/Chat';
+import { MobileApp } from './pages/MobileApp';
 
 export default function App() {
   const { setSession, setUser, fetchProfile } = useAuthStore();
@@ -81,6 +82,7 @@ export default function App() {
         <Route path="/missions" element={<Missions />} />
         <Route path="/planning" element={<Planning />} />
         <Route path="/chat" element={<Chat />} />
+        <Route path="/mobile" element={<MobileApp />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Layout>
