@@ -1,0 +1,28 @@
+@import "tailwindcss";
+
+@theme {
+  --color-night-black: #0B0B0B;
+  --color-night-purple: #7B2EFF;
+  --color-night-gold: #D4AF37;
+  --color-night-gray: #F5F5F5;
+  
+  --color-role-employee: #2979FF;
+  --color-role-employee-light: #E3F2FD;
+  
+  --color-role-employer: #7B2EFF;
+  --color-role-employer-light: #F3E8FF;
+  
+  --color-role-admin: #D4AF37;
+  --color-role-admin-light: #FFF8E1;
+
+  --color-status-open: #00C853;
+  --color-status-assigned: #2979FF;
+  --color-status-completed: #6A1B9A;
+  --color-status-cancelled: #D32F2F;
+}
+
+body {
+  background-color: var(--color-night-black);
+  color: white;
+  font-family: 'Inter', sans-serif;
+}
