@@ -100,6 +100,12 @@ create policy "Employers can create missions." on public.missions
     )
   );
 
+create policy "Employees can apply to missions." on public.missions
+  for update using (auth.uid() = employee_id or exists (
+      select 1 from public.establishments
+      where id = establishment_id and owner_id = auth.uid()
+  ));
+
 -- 5️⃣ TABLE : reviews
 create table public.reviews (
   id uuid default uuid_generate_v4() primary key,
@@ -115,6 +121,9 @@ alter table public.reviews enable row level security;
 
 create policy "Reviews are viewable by everyone." on public.reviews
   for select using (true);
+
+create policy "Users can create reviews." on public.reviews
+  for insert with check (auth.uid() = reviewer_id);
 
 -- Triggers for auto-updating timestamps
 create or replace function public.handle_updated_at()
@@ -148,3 +157,11 @@ $$ language plpgsql security definer;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+
+-- ⚡️ ENABLE REALTIME
+-- Add tables to the publication to enable real-time subscriptions
+alter publication supabase_realtime add table public.users;
+alter publication supabase_realtime add table public.establishments;
+alter publication supabase_realtime add table public.missions;
+alter publication supabase_realtime add table public.reviews;
+

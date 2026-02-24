@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Button, Card, cn } from '../components/ui';
 import { Briefcase, Clock, MapPin, Loader2 } from 'lucide-react';
@@ -14,7 +14,9 @@ export const Dashboard = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Bonjour, {user.first_name || 'User'} 👋</h1>
+          <h1 className="text-2xl font-bold">
+            Bonjour, <Link to="/profile" className="hover:text-night-purple hover:underline transition-colors">{user.first_name || 'User'}</Link> 👋
+          </h1>
           <p className="text-gray-400">
             {user.role === 'employee' ? 'Prêt pour votre prochaine mission ?' : 'Gérez vos établissements et recrutements.'}
           </p>
@@ -26,18 +28,29 @@ export const Dashboard = () => {
         )}
       </div>
 
-      {user.role === 'employee' ? <EmployeeDashboard userId={user.id} /> : <EmployerDashboard userId={user.id} />}
+      {user.role === 'employee' ? <EmployeeDashboard userId={user.id} isDemo={user.isDemo} /> : <EmployerDashboard userId={user.id} isDemo={user.isDemo} />}
     </div>
   );
 };
 
-const EmployeeDashboard = ({ userId }: { userId: string }) => {
+const EmployeeDashboard = ({ userId, isDemo }: { userId: string, isDemo?: boolean }) => {
   const [missions, setMissions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ rating: 0, completed: 0 });
 
   useEffect(() => {
     const fetchData = async () => {
+      if (isDemo) {
+        // Mock data for demo
+        setMissions([
+          { id: 1, title: 'Barman Mixologue', price: 120, status: 'open', start_time: '22:00', end_time: '04:00', establishments: { name: 'Le VIP Room' } },
+          { id: 2, title: 'Sécurité', price: 100, status: 'open', start_time: '23:00', end_time: '05:00', establishments: { name: 'Club 55' } },
+        ]);
+        setStats({ rating: 4.8, completed: 12 });
+        setLoading(false);
+        return;
+      }
+
       try {
         // Fetch missions
         const { data: missionsData, error: missionsError } = await supabase
@@ -57,7 +70,7 @@ const EmployeeDashboard = ({ userId }: { userId: string }) => {
           .from('users')
           .select('rating, total_reviews')
           .eq('id', userId)
-          .single();
+          .maybeSingle();
 
         if (userError) throw userError;
 
@@ -133,13 +146,23 @@ const EmployeeDashboard = ({ userId }: { userId: string }) => {
   );
 };
 
-const EmployerDashboard = ({ userId }: { userId: string }) => {
+const EmployerDashboard = ({ userId, isDemo }: { userId: string, isDemo?: boolean }) => {
   const [establishments, setEstablishments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ applications: 0, activeMissions: 0, ratedEmployees: 0 });
 
   useEffect(() => {
     const fetchData = async () => {
+      if (isDemo) {
+        // Mock data for demo
+        setEstablishments([
+          { id: 'demo-1', name: 'Night Club Demo', type: 'club', city: 'Libreville', country: 'Gabon' }
+        ]);
+        setStats({ applications: 5, activeMissions: 2, ratedEmployees: 8 });
+        setLoading(false);
+        return;
+      }
+
       try {
         // Fetch establishments
         const { data: establishmentsData, error: establishmentsError } = await supabase

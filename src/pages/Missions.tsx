@@ -15,6 +15,17 @@ export const Missions = () => {
 
   const fetchMissions = async () => {
     setLoading(true);
+
+    if (user?.isDemo) {
+      // Mock data for demo
+      setMissions([
+        { id: 1, title: 'Barman Mixologue', price: 120, status: 'open', date: new Date().toISOString(), start_time: '22:00', end_time: '04:00', establishments: { name: 'Le VIP Room', city: 'Libreville' } },
+        { id: 2, title: 'Sécurité', price: 100, status: 'open', date: new Date(Date.now() + 86400000).toISOString(), start_time: '23:00', end_time: '05:00', establishments: { name: 'Club 55', city: 'Libreville' } },
+      ]);
+      setLoading(false);
+      return;
+    }
+
     try {
       let query = supabase
         .from('missions')

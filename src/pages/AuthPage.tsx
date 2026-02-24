@@ -29,6 +29,26 @@ export const AuthPage = () => {
     if (roleParam === 'employee') setRole('employee');
   }, []);
 
+  const handleDemoLogin = () => {
+    setLoading(true);
+    // Immediate login for demo
+    setUser({
+      id: 'demo-employer-' + Math.random().toString(36).substr(2, 9),
+      email: 'demo@nightlink.com',
+      role: role, // Use the currently selected role
+      first_name: 'Demo',
+      last_name: role === 'employer' ? 'Recruteur' : 'Candidat',
+      phone: '0600000000',
+      city: 'Libreville',
+      created_at: new Date().toISOString(),
+      company_name: role === 'employer' ? 'Night Club Demo' : undefined,
+      verified: true,
+      isDemo: true
+    });
+    setLoading(false);
+    navigate('/dashboard');
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -70,15 +90,17 @@ export const AuthPage = () => {
         }
       }
     } catch (err: any) {
+      console.error("Auth error:", err);
       if (err.message === "Email not confirmed") {
         setError("Votre compte n'est pas encore activé. Veuillez cliquer sur le lien reçu par email.");
-        // Optional: Add logic to show a "Resend Confirmation" button here if needed
       } else if (err.message === "Invalid login credentials") {
         setError("Email ou mot de passe incorrect.");
-      } else if (err.message.includes("Email rate limit exceeded")) {
-        setError("Trop de tentatives. Veuillez patienter quelques minutes avant de réessayer ou utiliser une autre adresse email.");
+      } else if (err.message.includes("Email rate limit exceeded") || err.status === 429) {
+        setError("Limite d'envoi d'emails atteinte (sécurité Supabase). Veuillez patienter une heure ou utiliser le Mode Démo ci-dessous pour tester l'application maintenant.");
+      } else if (err.message.includes("User already registered")) {
+        setError("Cet email est déjà utilisé. Essayez de vous connecter.");
       } else {
-        setError(err.message);
+        setError(err.message || "Une erreur est survenue.");
       }
     } finally {
       setLoading(false);
@@ -273,6 +295,22 @@ export const AuthPage = () => {
           >
             {isLogin ? "Pas encore de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
           </button>
+        </div>
+
+        {/* Demo Mode Fallback */}
+        <div className="pt-6 border-t border-white/10">
+          <div className="bg-white/5 rounded-lg p-4 text-center space-y-3">
+            <p className="text-xs text-gray-400">
+              Problème de réception d'email ou limite atteinte ?
+            </p>
+            <button
+              type="button"
+              onClick={handleDemoLogin}
+              className="w-full py-2 rounded-lg bg-night-purple/20 border border-night-purple/50 text-night-purple text-sm font-medium hover:bg-night-purple/30 transition-colors flex items-center justify-center gap-2"
+            >
+              🚀 Accès Démo (Sans email)
+            </button>
+          </div>
         </div>
       </Card>
     </div>

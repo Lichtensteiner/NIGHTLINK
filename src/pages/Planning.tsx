@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, Link } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Card, cn } from '../components/ui';
 import { Calendar as CalendarIcon, Clock, MapPin, User, Loader2 } from 'lucide-react';
@@ -16,6 +16,17 @@ export const Planning = () => {
     const fetchMissions = async () => {
       if (!user) return;
       setLoading(true);
+
+      if (user.isDemo) {
+        // Mock data for demo
+        setMissions([
+          { id: 1, title: 'Barman Mixologue', date: new Date().toISOString(), start_time: '22:00', end_time: '04:00', status: 'assigned', establishments: { name: 'Le VIP Room' }, users: { first_name: 'Jean', last_name: 'D.' } },
+          { id: 2, title: 'Sécurité', date: new Date(Date.now() + 86400000).toISOString(), start_time: '23:00', end_time: '05:00', status: 'open', establishments: { name: 'Club 55' }, users: null },
+        ]);
+        setLoading(false);
+        return;
+      }
+
       try {
         let query = supabase
           .from('missions')
@@ -132,7 +143,14 @@ export const Planning = () => {
                 <div className="space-y-1 text-sm text-gray-400">
                   {user.role === 'employer' ? (
                      <div className="flex items-center gap-2">
-                       <User className="w-3 h-3" /> {mission.users ? `${mission.users.first_name} ${mission.users.last_name}` : 'Non assigné'}
+                       <User className="w-3 h-3" /> 
+                       {mission.users ? (
+                         <Link to={`/profile/${mission.employee_id}`} className="hover:text-night-purple hover:underline transition-colors">
+                           {mission.users.first_name} {mission.users.last_name}
+                         </Link>
+                       ) : (
+                         'Non assigné'
+                       )}
                      </div>
                   ) : (
                     <div className="flex items-center gap-2">

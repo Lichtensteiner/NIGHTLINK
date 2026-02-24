@@ -39,6 +39,12 @@ export const CreateMissionForm = ({ onCancel, onSuccess }: { onCancel: () => voi
     e.preventDefault();
     if (!user || !formData.establishment_id) return;
 
+    if (user.isDemo) {
+      alert("En mode démo, la création de mission est simulée.");
+      onSuccess();
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase

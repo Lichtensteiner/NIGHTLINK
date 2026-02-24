@@ -79,6 +79,7 @@ export default function App() {
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:userId" element={<Profile />} />
         <Route path="/missions" element={<Missions />} />
         <Route path="/planning" element={<Planning />} />
         <Route path="/chat" element={<Chat />} />

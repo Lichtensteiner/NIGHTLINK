@@ -13,6 +13,7 @@ export interface User {
   verified: boolean;
   profile_photo?: string;
   created_at: string;
+  isDemo?: boolean;
 }
 
 export interface Establishment {

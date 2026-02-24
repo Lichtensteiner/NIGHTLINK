@@ -20,6 +20,12 @@ export const CreateEstablishmentForm = ({ onCancel, onSuccess }: { onCancel: () 
     e.preventDefault();
     if (!user) return;
 
+    if (user.isDemo) {
+      alert("En mode démo, la création d'établissement est simulée.");
+      onSuccess();
+      return;
+    }
+
     setLoading(true);
     try {
       const { error } = await supabase
