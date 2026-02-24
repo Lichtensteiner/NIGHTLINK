@@ -160,7 +160,7 @@ export const LandingPage = () => {
                 <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl group">
                   <div className="absolute inset-0 bg-gradient-to-t from-night-black via-transparent to-transparent z-10" />
                   <img 
-                    src="https://images.unsplash.com/photo-1516280440614-6697288d5d38?q=80&w=800&auto=format&fit=crop" 
+                    src="https://picsum.photos/seed/dj/800/500" 
                     alt="DJ mixing" 
                     className="w-full h-[500px] object-cover transition-transform duration-700 group-hover:scale-110"
                     referrerPolicy="no-referrer"
@@ -248,7 +248,7 @@ export const LandingPage = () => {
                 <div className="relative rounded-3xl overflow-hidden border border-white/10 shadow-2xl group">
                   <div className="absolute inset-0 bg-gradient-to-t from-night-black via-transparent to-transparent z-10" />
                   <img 
-                    src="https://images.unsplash.com/photo-1572116469696-9587f100631e?q=80&w=800&auto=format&fit=crop" 
+                    src="https://picsum.photos/seed/bar/800/500" 
                     alt="Bar interior" 
                     className="w-full h-[500px] object-cover transition-transform duration-700 group-hover:scale-110"
                     referrerPolicy="no-referrer"

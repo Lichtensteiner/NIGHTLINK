@@ -1,11 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Button, Card, cn } from '../components/ui';
-import { User, Settings, LogOut } from 'lucide-react';
+import { User, Settings, LogOut, MapPin, Plus, Loader2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { CreateEstablishmentForm } from '../components/CreateEstablishmentForm';
 
 export const Profile = () => {
   const { user } = useAuthStore();
+  const [establishments, setEstablishments] = useState<any[]>([]);
+  const [loadingEst, setLoadingEst] = useState(false);
+  const [showCreateEst, setShowCreateEst] = useState(false);
+
+  useEffect(() => {
+    if (user?.role === 'employer') {
+      fetchEstablishments();
+    }
+  }, [user]);
+
+  const fetchEstablishments = async () => {
+    if (!user) return;
+    setLoadingEst(true);
+    const { data } = await supabase
+      .from('establishments')
+      .select('*')
+      .eq('owner_id', user.id);
+    setEstablishments(data || []);
+    setLoadingEst(false);
+  };
+
   if (!user) return <Navigate to="/auth" />;
 
   return (
@@ -31,6 +54,20 @@ export const Profile = () => {
         </div>
       </div>
 
+      {showCreateEst && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4">
+          <div className="bg-night-black border border-white/10 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+            <CreateEstablishmentForm 
+              onCancel={() => setShowCreateEst(false)} 
+              onSuccess={() => {
+                setShowCreateEst(false);
+                fetchEstablishments();
+              }} 
+            />
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <Card className="space-y-4">
           <h3 className="font-semibold flex items-center gap-2">
@@ -51,6 +88,36 @@ export const Profile = () => {
             </div>
           </div>
         </Card>
+
+        {user.role === 'employer' && (
+          <Card className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold flex items-center gap-2">
+                <MapPin className="w-4 h-4 text-night-gold" /> Mes Établissements
+              </h3>
+              <Button size="sm" variant="ghost" onClick={() => setShowCreateEst(true)}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            {loadingEst ? (
+              <div className="flex justify-center p-4"><Loader2 className="animate-spin w-4 h-4 text-gray-500" /></div>
+            ) : establishments.length === 0 ? (
+              <p className="text-sm text-gray-500 text-center py-2">Aucun établissement ajouté.</p>
+            ) : (
+              <div className="space-y-3">
+                {establishments.map(est => (
+                  <div key={est.id} className="p-3 rounded-lg bg-white/5 border border-white/10 flex justify-between items-center">
+                    <div>
+                      <div className="font-medium">{est.name}</div>
+                      <div className="text-xs text-gray-400">{est.type} • {est.city}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        )}
 
         <Button variant="outline" className="w-full">
           <Settings className="w-4 h-4 mr-2" /> Paramètres

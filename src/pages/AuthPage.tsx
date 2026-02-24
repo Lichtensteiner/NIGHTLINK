@@ -6,6 +6,7 @@ import { Button, Input, Card, cn } from '../components/ui';
 import { UserRole } from '../types';
 
 export const AuthPage = () => {
+  const { setUser } = useAuthStore();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = React.useState(true);
   const [email, setEmail] = React.useState('');
@@ -47,6 +48,7 @@ export const AuthPage = () => {
           email,
           password,
           options: {
+            emailRedirectTo: window.location.origin,
             data: {
               role: role,
               first_name: firstName,
@@ -69,14 +71,36 @@ export const AuthPage = () => {
       }
     } catch (err: any) {
       if (err.message === "Email not confirmed") {
-        setError("Veuillez confirmer votre adresse email avant de vous connecter.");
+        setError("Votre compte n'est pas encore activé. Veuillez cliquer sur le lien reçu par email.");
+        // Optional: Add logic to show a "Resend Confirmation" button here if needed
       } else if (err.message === "Invalid login credentials") {
         setError("Email ou mot de passe incorrect.");
       } else if (err.message.includes("Email rate limit exceeded")) {
-        setError("Trop de tentatives. Veuillez patienter quelques minutes avant de réessayer.");
+        setError("Trop de tentatives. Veuillez patienter quelques minutes avant de réessayer ou utiliser une autre adresse email.");
       } else {
         setError(err.message);
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    if (!email) return;
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+        options: {
+          emailRedirectTo: window.location.origin
+        }
+      });
+      if (error) throw error;
+      setSuccessMessage("Email de confirmation renvoyé ! Vérifiez vos spams.");
+      setError(null);
+    } catch (err: any) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -101,8 +125,16 @@ export const AuthPage = () => {
         </div>
 
         {error && (
-          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm">
-            {error}
+          <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm flex flex-col gap-2">
+            <p>{error}</p>
+            {error.includes("pas encore activé") && (
+              <button 
+                onClick={handleResendConfirmation}
+                className="text-xs underline hover:text-red-400 self-start"
+              >
+                Renvoyer l'email de confirmation
+              </button>
+            )}
           </div>
         )}
 
@@ -113,6 +145,11 @@ export const AuthPage = () => {
         )}
 
         <form onSubmit={handleAuth} className="space-y-4">
+          {!isLogin && (
+            <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg text-xs text-blue-400 mb-4">
+              ℹ️ Utilisez une <strong>vraie adresse email</strong> pour recevoir le lien d'activation requis pour la connexion.
+            </div>
+          )}
           {!isLogin && (
             <>
               <div className="grid grid-cols-2 gap-2 mb-4">
@@ -235,43 +272,6 @@ export const AuthPage = () => {
             className="text-sm text-gray-400 hover:text-white transition-colors"
           >
             {isLogin ? "Pas encore de compte ? S'inscrire" : "Déjà un compte ? Se connecter"}
-          </button>
-        </div>
-
-        {/* Dev Helper */}
-        <div className="pt-4 border-t border-white/10 text-center">
-          <button
-            type="button"
-            onClick={async () => {
-              setLoading(true);
-              try {
-                const { data, error } = await supabase.auth.signUp({
-                  email: 'admin@gmail.com',
-                  password: 'password',
-                  options: {
-                    data: {
-                      role: 'admin',
-                      first_name: 'Admin',
-                      last_name: 'System'
-                    }
-                  }
-                });
-                if (error) throw error;
-                if (data.user) {
-                  setSuccessMessage("Admin créé ! Vérifiez vos emails ou connectez-vous.");
-                  setIsLogin(true);
-                  setEmail('admin@gmail.com');
-                  setPassword('password');
-                }
-              } catch (err: any) {
-                setError(err.message);
-              } finally {
-                setLoading(false);
-              }
-            }}
-            className="text-xs text-night-purple hover:text-white transition-colors opacity-50 hover:opacity-100"
-          >
-            (Dev) Créer Admin Rapide
           </button>
         </div>
       </Card>

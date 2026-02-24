@@ -1,31 +1,74 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
 import { Card, cn } from '../components/ui';
-import { Calendar as CalendarIcon, Clock, MapPin, User } from 'lucide-react';
-import { format, addDays, startOfWeek, addWeeks, subWeeks } from 'date-fns';
+import { Calendar as CalendarIcon, Clock, MapPin, User, Loader2 } from 'lucide-react';
+import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { supabase } from '../lib/supabase';
 
 export const Planning = () => {
   const { user } = useAuthStore();
+  const [missions, setMissions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchMissions = async () => {
+      if (!user) return;
+      setLoading(true);
+      try {
+        let query = supabase
+          .from('missions')
+          .select(`
+            *,
+            establishments (name),
+            users:employee_id (first_name, last_name)
+          `)
+          .neq('status', 'cancelled') // Show all except cancelled
+          .order('date', { ascending: true });
+
+        if (user.role === 'employer') {
+          // Get establishments owned by user
+          const { data: establishments } = await supabase
+            .from('establishments')
+            .select('id')
+            .eq('owner_id', user.id);
+          
+          const establishmentIds = establishments?.map(e => e.id) || [];
+          
+          if (establishmentIds.length > 0) {
+            query = query.in('establishment_id', establishmentIds);
+          } else {
+            setMissions([]);
+            setLoading(false);
+            return;
+          }
+        } else {
+          // Employee: show assigned missions
+          query = query.eq('employee_id', user.id);
+        }
+
+        const { data, error } = await query;
+        if (error) throw error;
+        setMissions(data || []);
+      } catch (error) {
+        console.error('Error fetching planning:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMissions();
+  }, [user]);
+
   if (!user) return <Navigate to="/auth" />;
 
   const today = new Date();
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(startOfWeek(today, { weekStartsOn: 1 }), i));
 
-  // Mock data - different for roles
-  const employeeMissions = [
-    { id: 1, title: 'Barman Mixologue', establishment: 'Le VIP Room', date: today, time: '22:00 - 04:00', status: 'confirmed' },
-    { id: 3, title: 'Serveur Carré VIP', establishment: 'Lounge Sky', date: addDays(today, 2), time: '21:00 - 03:00', status: 'pending' },
-  ];
-
-  const employerMissions = [
-    { id: 1, title: 'Barman Mixologue', employee: 'Jean D.', date: today, time: '22:00 - 04:00', status: 'confirmed' },
-    { id: 2, title: 'Sécurité', employee: 'Marc A.', date: today, time: '22:00 - 05:00', status: 'confirmed' },
-    { id: 3, title: 'DJ Set', employee: 'Sarah K.', date: addDays(today, 1), time: '23:00 - 04:00', status: 'pending' },
-  ];
-
-  const missions = user.role === 'employer' ? employerMissions : employeeMissions;
+  if (loading) {
+    return <div className="flex justify-center p-8"><Loader2 className="animate-spin text-night-purple" /></div>;
+  }
 
   return (
     <div className="space-y-6">
@@ -37,8 +80,8 @@ export const Planning = () => {
       <Card className="p-4 overflow-x-auto">
         <div className="flex justify-between min-w-[300px]">
           {weekDays.map((day, i) => {
-            const isToday = format(day, 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd');
-            const hasEvent = missions.some(m => format(m.date, 'yyyy-MM-dd') === format(day, 'yyyy-MM-dd'));
+            const isToday = isSameDay(day, today);
+            const hasEvent = missions.some(m => isSameDay(new Date(m.date), day));
             
             return (
               <div key={i} className="flex flex-col items-center gap-2">
@@ -65,39 +108,45 @@ export const Planning = () => {
       </h2>
       
       <div className="space-y-4">
-        {missions.map((mission) => (
-          <div key={mission.id} className="flex gap-4">
-            <div className="flex flex-col items-center min-w-[50px]">
-              <span className="text-sm font-bold text-night-purple">{format(mission.date, 'd MMM', { locale: fr })}</span>
-              <div className="h-full w-0.5 bg-white/10 mt-2" />
-            </div>
-            <Card className="flex-1 p-4 mb-4 hover:bg-white/5 transition-colors">
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="font-semibold">{mission.title}</h3>
-                <span className={cn(
-                  "text-[10px] px-2 py-0.5 rounded-full uppercase",
-                  mission.status === 'confirmed' ? "bg-green-500/20 text-green-500" : "bg-yellow-500/20 text-yellow-500"
-                )}>
-                  {mission.status === 'confirmed' ? 'Confirmé' : 'En attente'}
-                </span>
+        {missions.length === 0 ? (
+          <p className="text-gray-400 text-sm text-center py-4">Aucune mission planifiée.</p>
+        ) : (
+          missions.map((mission) => (
+            <div key={mission.id} className="flex gap-4">
+              <div className="flex flex-col items-center min-w-[50px]">
+                <span className="text-sm font-bold text-night-purple">{format(new Date(mission.date), 'd MMM', { locale: fr })}</span>
+                <div className="h-full w-0.5 bg-white/10 mt-2" />
               </div>
-              <div className="space-y-1 text-sm text-gray-400">
-                {user.role === 'employer' ? (
-                   <div className="flex items-center gap-2">
-                     <User className="w-3 h-3" /> {mission.employee}
-                   </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <MapPin className="w-3 h-3" /> {mission.establishment}
-                  </div>
-                )}
-                <div className="flex items-center gap-2">
-                  <Clock className="w-3 h-3" /> {mission.time}
+              <Card className="flex-1 p-4 mb-4 hover:bg-white/5 transition-colors">
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="font-semibold">{mission.title}</h3>
+                  <span className={cn(
+                    "text-[10px] px-2 py-0.5 rounded-full uppercase",
+                    mission.status === 'assigned' ? "bg-green-500/20 text-green-500" : 
+                    mission.status === 'open' ? "bg-blue-500/20 text-blue-500" : "bg-yellow-500/20 text-yellow-500"
+                  )}>
+                    {mission.status === 'assigned' ? 'Confirmé' : 
+                     mission.status === 'open' ? 'Ouvert' : mission.status}
+                  </span>
                 </div>
-              </div>
-            </Card>
-          </div>
-        ))}
+                <div className="space-y-1 text-sm text-gray-400">
+                  {user.role === 'employer' ? (
+                     <div className="flex items-center gap-2">
+                       <User className="w-3 h-3" /> {mission.users ? `${mission.users.first_name} ${mission.users.last_name}` : 'Non assigné'}
+                     </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-3 h-3" /> {mission.establishments?.name || 'Établissement'}
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <Clock className="w-3 h-3" /> {mission.start_time?.slice(0, 5)} - {mission.end_time?.slice(0, 5)}
+                  </div>
+                </div>
+              </Card>
+            </div>
+          ))
+        )}
       </div>
     </div>
   );
